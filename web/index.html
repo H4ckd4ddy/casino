@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset='UTF-8'>
+		<title>Sellan Casino</title>
+		<style>
+			.background {
+				background-color: #222;
+				width: 100%;
+				height: 100%;
+				padding: 0;
+				margin: 0;
+				position: fixed;
+				top: 0;
+				right: 0;
+				bottom: 0;
+				left: 0;
+				overflow: hidden;
+			}
+			body {
+				font-family: Avenir,arial;
+				color: white;
+			}
+			.click {
+				cursor: pointer;
+			}
+			.menu {
+				width: 100%;
+				height: 80px;
+				//background: grey;
+				background: rgba(0, 0, 0, 0.5);
+				position: fixed;
+				left: 0;
+				right: 0;
+			}
+			.menu * {
+				display: inline-block;
+			}
+			#header {
+				top: 0;
+			}
+			#header #title {
+				margin-top: 20px;
+				margin-left: 30px;
+				font-size: 30px;
+			}
+			#header #contract_address {
+				margin-top: 30px;
+				float: right;
+				margin-right: 30px;
+			}
+			#main {
+				height: 400px;
+				width: 800px;
+				background: rgba(0, 0, 0, 0.5);
+				position: fixed;
+				margin: auto;
+				left: 0;
+  				right: 0;
+  				top: 0;
+  				bottom: 0;
+  				border-radius: 10px;
+			}
+			#results,#actions {
+				height: 100%;
+				width: 49%;
+				border: solid 1px red;
+				position: relative;
+				text-align: center;
+			}
+			#results {
+				float: left;
+			}
+			#results #last_bet {
+				margin: 5px 25% 0 25%;
+				width: 50%;
+				text-align: left;
+			}
+			#results #last_bet td:nth-child(2) {
+				text-align: center;
+			}
+			#results #gauge {
+				position: absolute;
+				bottom: 0;
+				left: 0;
+				right: 0;
+				border: solid 1px blue;
+				width: 100%;
+				height: 200px;
+			}
+			#actions {
+				float: right;
+			}
+			#actions #current_bet {
+				margin: 5px 25% 0 25%;
+				width: 50%;
+				text-align: left;
+			}
+			#actions #current_bet td:nth-child(2) {
+				text-align: center;
+			}
+			#account {
+				bottom: 0;
+				text-align: center;
+				font-weight: bold;
+				font-size: 20px;
+			}
+			#account * * {
+				margin-top: 25px;
+				display: inline-block;
+			}
+			#account input {
+				background: none;
+				outline: none;
+				border: none;
+				border-bottom: solid 1px white;
+				color: white;
+			}
+			#account input::placeholder {
+				color: white;
+			}
+			#account #address {
+				float: left;
+				margin-left: 50px;
+			}
+			#account #balance {
+				float: right;
+				margin-right: 5px;
+			}
+			#account #deposit_button {
+				float: right;
+				margin-right: 5px;
+			}
+			#account #refresh_balance_button {
+				float: right;
+				margin-right: 30px;
+				font-size: 30px;
+				transform: translate(0, -10px);
+			}
+		</style>
+		<script language="javascript" type="text/javascript" src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
+		<script>function init_background(){particlesJS("particles-js",{particles:{number:{value:80,density:{enable:!0,value_area:800}},color:{value:"#ffffff"},shape:{type:"circle",stroke:{width:0,color:"#000000"},polygon:{nb_sides:5}},opacity:{value:.5,random:!1,anim:{enable:!1,speed:1,opacity_min:.1,sync:!1}},size:{value:5,random:!0,anim:{enable:!1,speed:40,size_min:.1,sync:!1}},line_linked:{enable:!0,distance:150,color:"#ffffff",opacity:.4,width:1},move:{enable:!0,speed:6,direction:"none",random:!1,straight:!1,out_mode:"out",attract:{enable:!1,rotateX:600,rotateY:1200}}},interactivity:{detect_on:"canvas",events:{onhover:{enable:!1,mode:"repulse"},onclick:{enable:!0,mode:"push"},resize:!0},modes:{grab:{distance:400,line_linked:{opacity:1}},bubble:{distance:400,size:40,duration:2,opacity:8,speed:3},repulse:{distance:200},push:{particles_nb:4},remove:{particles_nb:2}}},retina_detect:!0,config_demo:{hide_card:!1,background_color:"#b61924",background_image:"",background_position:"50% 50%",background_repeat:"no-repeat",background_size:"cover"}});}</script>
+		<script language="javascript" type="text/javascript" src="https://bernii.github.io/gauge.js/dist/gauge.min.js"></script>
+		<script language="javascript" type="text/javascript" src="web3.min.js"></script>
+		<script language="javascript" type="text/javascript" src="contract_address.js"></script>
+		<script language="javascript" type="text/javascript" src="contract_abi.js"></script>
+		<script>
+			var using_metamask = false
+
+			var settings = {
+				using_metamask: false,
+				contract_address: contract_address,
+				contract_abi: contract_abi,
+				account: null
+			}
+
+			if (typeof web3 !== 'undefined') {
+				web3 = new Web3(web3.currentProvider)
+				using_metamask = true
+			} else {
+				var web3 = new Web3(new Web3.providers.HttpProvider("http://127.0.0.1:7545"))
+			}
+
+
+			const contract = new web3.eth.Contract(settings.contract_abi, settings.contract_address)
+			
+			document.addEventListener("DOMContentLoaded", function() {
+				document.getElementById('contract_address').innerHTML = settings['contract_address']
+				init_background()
+				init_gauge()
+				check_connection()
+			})
+
+			function check_connection(){
+				web3.eth.getAccounts().then((accounts)=>{
+					if(accounts.length > 0){
+						set_account()
+						switch_menu(true)
+					}else{
+						switch_menu(false)
+					}
+				})
+			}
+
+			function switch_menu(connected){
+				if(connected){
+					document.getElementById('infos').style.display = 'inline'
+					document.getElementById('connect').style.display = 'none'
+				}else{
+					document.getElementById('infos').style.display = 'none'
+					document.getElementById('connect').style.display = 'inline'
+				}
+			}
+
+			function metamask_connect() {
+				ethereum
+					.request({ method: 'eth_requestAccounts' })
+					.then(connected)
+					.catch((error) => {
+						if (error.code === 4001) {
+							console.log('Please connect to MetaMask.')
+						} else {
+							console.error(error)
+						}
+					})
+			}
+
+			function private_key_change(input){
+				web3.eth.accounts.privateKeyToAccount(input.value)
+			}
+
+			function connected(accounts){
+				set_account()
+				switch_menu(true)
+			}
+
+			function set_account(){
+				web3.eth.getAccounts().then((accounts)=>{
+					settings.account = accounts[0]
+					show_address(settings.account)
+					refresh_balance()
+					update_current_bet()
+					update_last_bet()
+				})
+			}
+			function refresh_balance(){
+				contract.methods.get_balance(settings.account).call().then(show_balance)
+			}
+			function show_address(address){
+				document.getElementById('address').innerHTML = address
+			}
+			function show_balance(amount){
+				document.getElementById('balance').innerHTML = (amount/1000)+' ETH'
+			}
+
+			function place_bet(amount,choice){
+				send_query(contract.methods.place_bet(amount,choice))
+			}
+
+			function send_query(query){
+				if(using_metamask){
+					query.send({from: settings.account}).then(refresh_balance)
+				}else{
+					var encoded = query.encodeABI()
+					account.signTransaction(
+						{
+							data:encoded,
+							from:account.address,
+							gas: 2000000,
+							to:contract.options.address
+						}
+					).then((signed_transaction) => {
+						console.log(signed_transaction.rawTransaction)
+						web3.eth.sendSignedTransaction(signed_transaction.rawTransaction).then(console.log)
+					})
+				}
+			}
+
+			function ask_deposit(){
+				//popup('To deposit on your account, just send some eth to '+settings.contract_address)
+				deposit(prompt('How much deposit ? (ST)'))
+			}
+
+			function deposit(amount){
+				web3.eth.sendTransaction({to:settings.contract_address, from:settings.account, value:web3.utils.toWei(amount, "finney")})
+			}
+
+			function ask_withdraw(){
+				withdraw(prompt('How much withdraw ? (ST)'))
+			}
+
+			function withdraw(amount){
+				send_query(contract.methods.withdraw(amount))
+			}
+
+			function error(message){
+				popup(message)
+			}
+
+			function popup(message){
+				alert(message)
+			}
+
+			function show_contract_sources(){
+				window.open('contract.sol', '_blank')
+			}
+
+			function click_bet(choice){
+				place_bet(document.getElementById('bet_input').value,choice)
+			}
+
+			function set_ready(){
+				send_query(contract.methods.set_ready())
+			}
+
+			function update_bets_status(){
+				contract.methods.bets_open().call().then(show_bets_status)
+			}
+			function show_bets_status(open){
+				if(open){
+					document.getElementById('bets_status').innerHTML = '<span style="color:green;">OPEN</span>'
+				}else{
+					document.getElementById('bets_status').innerHTML = '<span style="color:red;">CLOSE</span>'
+				}
+			}
+
+			function update_current_bet(){
+				update_bets_status()
+				contract.methods.get_bet(settings.account).call().then(show_current_bet)
+			}
+			function show_current_bet(bet){
+				if(bet.amount > 0){
+					document.getElementById('bet_input').value = bet.amount
+					document.getElementById('bet_input').disabled = true
+					document.getElementById('green_button').disabled = true
+					document.getElementById('red_button').disabled = true
+					if(bet.choice){
+						document.getElementById('red_button').style.background = 'grey'
+					}else{
+						document.getElementById('green_button').style.background = 'grey'
+					}
+				}
+				if(bet.ready){
+					document.getElementById('ready_button').style.background.disabled
+				}
+				document.getElementById('total_green').innerHTML = bet.total_false+' ST'
+				document.getElementById('total_red').innerHTML = bet.total_true+' ST'
+			}
+
+			function update_last_bet(){
+				contract.methods.get_last_bet(settings.account).call().then(show_last_bet)
+			}
+			function show_last_bet(bet){
+				if(bet.amount > 0){
+					document.getElementById('last_amount').innerHTML = bet.amount+' ST'
+					if(bet.choice){
+						document.getElementById('last_choice').innerHTML = '<span style="color:red;">RED</span>'
+					}else{
+						document.getElementById('last_choice').innerHTML = '<span style="color:green;">GREEN</span>'
+					}
+				}
+				document.getElementById('last_players').innerHTML = bet.players_count
+				document.getElementById('last_total_green').innerHTML = bet.total_false+' ST'
+				document.getElementById('last_total_red').innerHTML = bet.total_true+' ST'
+				document.getElementById('last_win').innerHTML = bet.win+' ST'
+			}
+
+			function init_gauge(){
+				var opts = {
+					angle: 0.15,
+					lineWidth: 0.44,
+					radiusScale: 1,
+					pointer: {
+						length: 0.5,
+						strokeWidth: 0.035,
+						color: '#FFFFFF'
+					},
+					generateGradient: true,
+					highDpiSupport: true,
+					/*colorStart: '#6FADCF',
+					colorStop: '#8FC0DA',
+					strokeColor: '#E0E0E0',*/
+					staticZones: [
+						{strokeStyle: "#79ea4c", min: 0, max: 127.5},
+						{strokeStyle: "#f03c3c", min: 127.5, max: 255}
+					],
+					renderTicks: {
+						divisions: 5,
+						divWidth: 1.1,
+						divLength: 0.7,
+						divColor: '#333333',
+						subDivisions: 3,
+						subLength: 0.5,
+						subWidth: 0.6,
+						subColor: '#666666'
+					},
+					staticLabels: {
+						font: "10px sans-serif",
+						labels: [0, 50, 100, 150, 200, 255],
+						color: "#FFFFFF",
+						fractionDigits: 0
+					},
+				};
+				var target = document.getElementById('gauge');
+				var gauge = new Gauge(target).setOptions(opts);
+				gauge.animationSpeed = 32;
+				gauge.maxValue = 255;
+				gauge.setMinValue(0);
+				gauge.set(127.5);
+			}
+		</script>
+	</head>
+	<body>
+		<div class="background"><div id="particles-js"></div></div>
+		<div class="menu" id="header">
+			<div id="title">Sellan Casino</div>
+			<div id="contract_address" class="click" onclick="show_contract_sources()">0x</div>
+		</div>
+		<div id="main">
+			<div id="results">
+				<table id="last_bet">
+					<tr>
+						<td colspan="2"><center>Last game</center></td>
+					</tr>
+					<tr>
+						<td>Choice</td>
+						<td id="last_choice" style="font-weight: bold;">-</td>
+					</tr>
+					<tr>
+						<td>Amount</td>
+						<td id="last_amount">0</td>
+					</tr>
+					<tr>
+						<td>Players</td>
+						<td id="last_players">0</td>
+					</tr>
+					<tr>
+						<td>Green</td>
+						<td id="last_total_green">0</td>
+					</tr>
+					<tr>
+						<td>Red</td>
+						<td id="last_total_red">0</td>
+					</tr>
+					<tr>
+						<td>Win</td>
+						<td id="last_win">0</td>
+					</tr>
+				</table>
+				<canvas id="gauge"></canvas>
+			</div>
+			<div id="actions">
+				<table id="current_bet">
+					<tr>
+						<td colspan="2"><center>Current game</center></td>
+					</tr>
+					<tr>
+						<td>Bets</td>
+						<td id="bets_status" style="font-weight: bold;">-</td>
+					</tr>
+					<tr>
+						<td>Players</td>
+						<td id="players">0</td>
+					</tr>
+					<tr>
+						<td>Green</td>
+						<td id="total_green">0</td>
+					</tr>
+					<tr>
+						<td>Red</td>
+						<td id="total_red">0</td>
+					</tr>
+					<tr>
+						<td colspan="2"><br/><br/><br/></td>
+					</tr>
+					<tr>
+						<td colspan="2"><center><input id="bet_input" type="number" placeholder="Bet (ST)"></center></td>
+					</tr>
+					<tr>
+						<td><button id="green_button" onclick="click_bet(false)">GREEN</button></td>
+						<td><button id="red_button" onclick="click_bet(true)">RED</button></td>
+					</tr>
+					<tr>
+						<td colspan="2"><center><button onclick="set_ready()">READY</button></center></td>
+					</tr>
+				</table>
+			</div>
+		</div>
+		<div class="menu" id="account">
+			<div id="connect" style="display: none;">
+				<div onclick='metamask_connect()' class='click'>Connect with metamask</div>
+				<div>or</div>
+				<input type="password" name="privatekey" placeholder="Paste private key here" size="30" onchange="private_key_change(this)">
+			</div>
+			<div id="infos" style="display: none;">
+				<div id='address'>-</div>
+				<div id='refresh_balance_button' class='click' onclick='refresh_balance()'>↺</div>
+				<div id='balance' class='click' onclick='ask_withdraw()'>0 ETH</div>
+				<div id='deposit_button' class='click' onclick='ask_deposit()'>+</div>
+			</div>
+		</div>
+	</body>
+</html>
