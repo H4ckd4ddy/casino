@@ -58,6 +58,7 @@ contract casino {
         uint256 win;
     }
     address[] private players;
+    uint256 ready_count = 0;
     mapping(address => Bet) private bets;
     mapping(address => Bet) private last_bets;
     uint256 total_bets_false = 0;
@@ -68,9 +69,9 @@ contract casino {
         return (last_bet.choice, last_bet.amount, last_bet.this_result, last_bet.win, last_bet.players_count, last_bet.total_false, last_bet.total_true);
     }
     
-    function get_bet(address _address) public view returns (bool choice, uint256 amount, bool ready, uint256 players_count, uint256 total_false, uint256 total_true){
+    function get_bet(address _address) public view returns (bool choice, uint256 amount, bool ready, uint256 players_count, uint256 players_ready_count, uint256 total_false, uint256 total_true){
         Bet memory bet = bets[_address];
-        return (bet.choice, bet.amount, bet.ready, players.length, total_bets_false, total_bets_true);
+        return (bet.choice, bet.amount, bet.ready, players.length, ready_count, total_bets_false, total_bets_true);
     }
     
     function get_players_length() public view returns (uint256){
@@ -103,7 +104,9 @@ contract casino {
     }
     function set_ready() public returns (bool){
         require(bets[msg.sender].amount > 0);
+        require(!bets[msg.sender].ready);
         bets[msg.sender].ready = true;
+        ready_count += 1;
         bool everyone_ready = true;
         for(uint player = 0;player < players.length;player++){
             if(!bets[players[player]].ready){
@@ -145,6 +148,7 @@ contract casino {
         result = 0;
         total_bets_true = 0;
         total_bets_false = 0;
+        ready_count = 0;
         bets_open = true;
     }
     

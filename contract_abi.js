@@ -100,6 +100,11 @@ var contract_abi = [
 			},
 			{
 				"internalType": "uint256",
+				"name": "players_ready_count",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
 				"name": "total_false",
 				"type": "uint256"
 			},
