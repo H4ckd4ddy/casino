@@ -184,9 +184,13 @@
 				web3 = new Web3(web3.currentProvider)
 				using_metamask = true
 			} else {
-				var web3 = new Web3(new Web3.providers.HttpProvider("http://127.0.0.1:7545"))
+				var web3 = new Web3(new Web3.providers.HttpProvider("https://blockchain.sellan.fr"))
 			}
 
+			var url_params = new URLSearchParams(window.location.search)
+			if(url_params.get('contract_address')){
+				settings.contract_address = url_params.get('contract_address')
+			}
 
 			const contract = new web3.eth.Contract(settings.contract_abi, settings.contract_address)
 			
@@ -247,7 +251,7 @@
 					refresh_balance()
 					update_current_bet()
 					update_last_bet()
-					init_refresh(3000)
+					init_refresh(1000)
 				})
 			}
 			function refresh_balance(){
