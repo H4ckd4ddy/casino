@@ -24,6 +24,25 @@ var contract_abi = [
 		"type": "event"
 	},
 	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": true,
+				"internalType": "uint8",
+				"name": "old_tax",
+				"type": "uint8"
+			},
+			{
+				"indexed": true,
+				"internalType": "uint8",
+				"name": "new_tax",
+				"type": "uint8"
+			}
+		],
+		"name": "tax_set",
+		"type": "event"
+	},
+	{
 		"inputs": [],
 		"name": "bets_open",
 		"outputs": [
@@ -45,6 +64,39 @@ var contract_abi = [
 			}
 		],
 		"name": "change_owner",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint8",
+				"name": "new_tax",
+				"type": "uint8"
+			}
+		],
+		"name": "change_tax",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "current_tax",
+		"outputs": [
+			{
+				"internalType": "uint8",
+				"name": "",
+				"type": "uint8"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "destroy_casino",
 		"outputs": [],
 		"stateMutability": "nonpayable",
 		"type": "function"
@@ -271,6 +323,13 @@ var contract_abi = [
 				"type": "bool"
 			}
 		],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "withdraw_all",
+		"outputs": [],
 		"stateMutability": "nonpayable",
 		"type": "function"
 	},

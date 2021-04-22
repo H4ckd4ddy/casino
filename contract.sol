@@ -1,37 +1,10 @@
+// SPDX-License-Identifier: MIT
 pragma solidity >=0.7.0 <0.9.0;
 
 contract casino {
     
-    // We use finney
+    // We use finney (ST)
     uint256 public money_value = 1e15;
-    
-    
-    
-    /*####################*\
-      # Owner management #
-    \*####################*/
-    address private owner;
-    
-    // event for EVM logging
-    event owner_set(address indexed old_owner, address indexed new_owner);
-    
-    // modifier to check if caller is owner
-    modifier is_owner() {
-        require(msg.sender == owner, "Only owner can do that");
-        _;
-    }
-    constructor() {
-        owner = msg.sender;
-        emit owner_set(address(0), owner);
-        //bets.push(Bet({choice:false,amount:0,ready:false,win:0,adr:0x0000000000000000000000000000000000000000}));
-    }
-    function change_owner(address new_owner) public is_owner {
-        emit owner_set(owner, new_owner);
-        owner = new_owner;
-    }
-    function get_owner() external view returns (address) {
-        return owner;
-    }
     
     
     /*####################*\
@@ -40,7 +13,6 @@ contract casino {
     function random() private view returns(uint){
         return uint8(uint(keccak256(abi.encodePacked(block.difficulty, block.timestamp))));
     }
-    
     
     /*####################*\
       #    Take bets     #
@@ -153,22 +125,77 @@ contract casino {
     }
     
     
+    
+    /*####################*\
+      # Owner management #
+    \*####################*/
+    address private owner;
+    
+    event owner_set(address indexed old_owner, address indexed new_owner);
+    
+    modifier is_owner() {
+        require(msg.sender == owner, "Only owner can do that");
+        _;
+    }
+    constructor() {
+        owner = msg.sender;
+        emit owner_set(address(0), owner);
+    }
+    function change_owner(address new_owner) public is_owner {
+        emit owner_set(owner, new_owner);
+        owner = new_owner;
+    }
+    function get_owner() external view returns (address) {
+        return owner;
+    }
+    
+    /*####################*\
+      #  Tax management  #
+    \*####################*/
+    uint8 public current_tax = 0;
+    
+    event tax_set(uint8 indexed old_tax, uint8 indexed new_tax);
+    
+    function change_tax(uint8 new_tax) public is_owner {
+        emit tax_set(current_tax, new_tax);
+        current_tax = new_tax;
+    }
+    
     /*#######################*\
       # Accounts management #
     \*#######################*/
+    address[] private accounts_list;
     mapping(address => uint) private accounts;
     
     receive() external payable {
-        accounts[msg.sender] += (msg.value / money_value);
+        require((msg.value / money_value) > 0);
+        accounts[msg.sender] += (msg.value / money_value) - current_tax;
+        accounts[owner] += current_tax;
+        if(accounts[msg.sender] == 0){
+            accounts_list.push(msg.sender);
+        }
     }
     function get_balance(address _address) public view returns (uint){
         return accounts[_address];
     }
-    function withdraw(uint256 _amount ) public returns(bool) {
+    function withdraw(uint256 _amount) public returns(bool) {
         require(_amount <= accounts[msg.sender]);
-        accounts[msg.sender] -= _amount;
         payable(msg.sender).transfer(_amount * money_value);
+        accounts[msg.sender] -= _amount;
         return true;
+    }
+    
+    function withdraw_all() public is_owner {
+        for(uint account = 0;account < accounts_list.length;account++){
+            if(accounts[accounts_list[account]] > 0){
+                payable(accounts_list[account]).transfer(accounts[accounts_list[account]] * money_value);
+            }
+        }
+    }
+    
+    function destroy_casino() public is_owner {
+        withdraw_all();
+        selfdestruct(payable(owner));
     }
     
 }

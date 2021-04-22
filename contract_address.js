@@ -1,1 +1,1 @@
-var contract_address = '0x95149cd50D474Ee1Bb58378c5eA076dC521b5696'
+var contract_address = '0x15E3C85eB18Ee2471D3B306CF5189F85c328685d'

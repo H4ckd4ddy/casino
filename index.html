@@ -39,7 +39,7 @@
 				top: 0;
 			}
 			#header #title {
-				margin-top: 20px;
+				margin-top: 10px;
 				margin-left: 30px;
 				font-size: 30px;
 			}
@@ -138,6 +138,7 @@
 			#account #address {
 				float: left;
 				margin-left: 50px;
+				cursor: pointer;
 			}
 			#account #balance {
 				float: right;
@@ -152,6 +153,13 @@
 				margin-right: 30px;
 				font-size: 30px;
 				transform: translate(0, -10px);
+			}
+			#owner_interface {
+
+			}
+			#owner_interface button {
+				color: red;
+				margin-top: 30px;
 			}
 		</style>
 		<script language="javascript" type="text/javascript" src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
@@ -423,18 +431,38 @@
 				gauge.set(127.5);
 			}
 
+			function owner_interface(){
+				contract.methods.get_owner().call().then((owner)=>{
+					if(settings.account == owner){
+						document.getElementById('owner_interface').style.display = 'inline'
+						
+					}
+				})
+			}
+
 			function init_refresh(interval){
 				setInterval(function(){
 					update_current_bet();
 					update_last_bet();
 				}, interval);
 			}
+
+			function destroy_casino(){
+				if(confirm('Are you sure ?')){
+					send_query(contract.methods.destroy_casino())
+				}
+			}
+
+			function change_tax(){
+				var new_tax = document.getElementById('tax_input').value
+				send_query(contract.methods.change_tax(new_tax))
+			}
 		</script>
 	</head>
 	<body>
 		<div class="background"><div id="particles-js"></div></div>
 		<div class="menu" id="header">
-			<div id="title">Sellan Casino</div>
+			<div id="title"><img height="60px" src="logo.png"/></div>
 			<div id="contract_address" class="click" onclick="show_contract_sources()">0x</div>
 		</div>
 		<div id="main">
@@ -517,8 +545,13 @@
 				<div>or</div>
 				<input type="password" name="privatekey" placeholder="Paste private key here" size="30" onchange="private_key_change(this)">
 			</div>
+			<div id="owner_interface" style="display: none;">
+				<input id="tax_input" type="number" placeholder="Tax (ST)" size="8">
+				<button onclick="change_tax()">Set tax</button>
+				<button onclick="destroy_casino()">Destroy casino</button>
+			</div>
 			<div id="infos" style="display: none;">
-				<div id='address'>-</div>
+				<div id='address' onclick="owner_interface()">-</div>
 				<div id='refresh_balance_button' class='click' onclick='refresh_balance()'>↺</div>
 				<div id='balance' class='click' onclick='ask_withdraw()'>0 ETH</div>
 				<div id='deposit_button' class='click' onclick='ask_deposit()'>+</div>
